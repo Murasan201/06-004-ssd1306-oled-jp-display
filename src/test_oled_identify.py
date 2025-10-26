@@ -14,6 +14,8 @@ from PIL import Image, ImageDraw, ImageFont
 WIDTH = 128
 HEIGHT = 64
 I2C_ADDRESS = 0x3C
+FONT_PATH = "../assets/fonts/NotoSansCJKjp-Regular.otf"
+FONT_SIZE = 14
 
 def display_test_message(port_number, message):
     """
@@ -28,14 +30,22 @@ def display_test_message(port_number, message):
         serial = i2c(port=port_number, address=I2C_ADDRESS)
         device = ssd1306(serial, width=WIDTH, height=HEIGHT)
 
+        # 日本語フォント読み込み
+        try:
+            font = ImageFont.truetype(FONT_PATH, FONT_SIZE)
+        except IOError:
+            print(f"⚠️ フォントが見つかりません: {FONT_PATH}")
+            print("   デフォルトフォントを使用します（小さく表示されます）")
+            font = ImageFont.load_default()
+
         # 画像作成
         image = Image.new("1", (WIDTH, HEIGHT))
         draw = ImageDraw.Draw(image)
 
-        # デフォルトフォント使用（日本語は表示できないが識別用）
-        draw.text((10, 10), message, fill=255)
-        draw.text((10, 30), f"I2C Port: {port_number}", fill=255)
-        draw.text((10, 50), f"Addr: 0x{I2C_ADDRESS:02X}", fill=255)
+        # 大きく見やすいテキストを表示
+        draw.text((5, 5), message, font=font, fill=255)
+        draw.text((5, 25), f"Port: {port_number}", font=font, fill=255)
+        draw.text((5, 45), f"0x{I2C_ADDRESS:02X}", font=font, fill=255)
 
         # 表示
         device.display(image)
@@ -58,7 +68,7 @@ def main():
     # I2C-1にテストメッセージを表示
     print("[テスト 1] I2C-1 (GPIO I2C) に識別メッセージを表示")
     print("-" * 60)
-    display_test_message(1, "TEST - I2C Port 1")
+    display_test_message(1, "識別テスト")
 
     print()
     print("=" * 60)

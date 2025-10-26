@@ -25,7 +25,7 @@ FONT_SIZE = 16  # フォントサイズ
 # スクロール設定
 SCROLL_SPEED_PX = 2  # スクロール速度（ピクセル/フレーム）
 FRAME_DELAY_SEC = 0.05  # フレーム間隔（秒）。小さいほど滑らか（0.05秒 = 20 FPS相当）
-LOOP_COUNT = None  # ループ回数（None で無限ループ、整数で指定回数）
+LOOP_COUNT = 3  # ループ回数（None で無限ループ、整数で指定回数）
 
 # レイアウト設定
 MARGIN_Y = 24  # テキストの垂直位置（画面中央付近）
@@ -58,6 +58,10 @@ def main():
     try:
         device = ssd1306(serial, width=WIDTH, height=HEIGHT)
         print(f"OLED初期化完了: {WIDTH}×{HEIGHT}")
+
+        # コントラストを最大に設定（明るさ調整）
+        device.contrast(255)
+        print("コントラスト設定: 255 (最大)")
     except Exception as e:
         print(f"[OLED初期化]エラー: {e}")
         print("対処方法: デバイスとの通信を確認してください")

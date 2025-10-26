@@ -6,6 +6,7 @@ Raspberry Pi 5とSSD1306搭載OLEDで日本語の複数行テキストを表示�
 """
 
 import sys
+import time
 from luma.core.interface.serial import i2c
 from luma.oled.device import ssd1306
 from PIL import Image, ImageDraw, ImageFont
@@ -17,18 +18,17 @@ from PIL import Image, ImageDraw, ImageFont
 # 表示するテキスト（複数行）
 TEXT_LINES = [
     "こんにちは",
-    "Raspberry Pi",
-    "SSD1306 OLED"
+    "Raspberry Pi 5"
 ]
 
 # フォント設定
 FONT_PATH = "../assets/fonts/NotoSansCJKjp-Regular.otf"  # フォントファイルのパス
-FONT_SIZE = 12  # フォントサイズ（文字が収まらない場合は調整）
+FONT_SIZE = 18  # フォントサイズ（文字が収まらない場合は調整）
 
 # レイアウト設定
-MARGIN_X = 2   # 左右のマージン（ピクセル）
-MARGIN_Y = 2   # 上下のマージン（ピクセル）
-LINE_SPACING = 2  # 行間隔（ピクセル）
+MARGIN_X = 5   # 左右のマージン（ピクセル）
+MARGIN_Y = 10  # 上下のマージン（ピクセル）
+LINE_SPACING = 8  # 行間隔（ピクセル）
 
 # ディスプレイ設定
 WIDTH = 128   # 画面幅（128×64 または 128×32）
@@ -58,6 +58,10 @@ def main():
     try:
         device = ssd1306(serial, width=WIDTH, height=HEIGHT)
         print(f"OLED初期化完了: {WIDTH}×{HEIGHT}")
+
+        # コントラストを最大に設定（明るさ調整）
+        device.contrast(255)
+        print("コントラスト設定: 255 (最大)")
     except Exception as e:
         print(f"[OLED初期化]エラー: {e}")
         print("対処方法: デバイスとの通信を確認してください")
@@ -103,6 +107,19 @@ def main():
         device.display(image)
         print("表示完了")
         print(f"表示テキスト: {len(TEXT_LINES)}行")
+
+        # 表示を保持（プログラム終了で画面がクリアされるのを防ぐ）
+        print("\n表示を保持しています...")
+        print("終了する場合は Ctrl+C を押してください")
+
+        try:
+            # 無限ループで表示を保持
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("\n終了します")
+            device.clear()
+
     except Exception as e:
         print(f"[表示]エラー: {e}")
         print("対処方法: デバイス接続を確認してください")
