@@ -147,8 +147,6 @@ wget https://raw.githubusercontent.com/googlefonts/noto-cjk/main/LICENSE
 cd ../..
 ```
 
-詳細は [`assets/fonts/README.md`](assets/fonts/README.md) を参照してください。
-
 ---
 
 ## 使用方法
