@@ -1,0 +1,27 @@
+# フォントファイル（著作権の関係でリポジトリには含めない）
+assets/fonts/*.otf
+assets/fonts/*.ttf
+assets/fonts/LICENSE
+
+# MCP設定ファイル
+.mcp.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 仮想環境
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
