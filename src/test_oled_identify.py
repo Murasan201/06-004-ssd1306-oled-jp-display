@@ -2,6 +2,7 @@
 """
 OLED識別テストスクリプト
 どちらのOLEDに表示されているかを確認するため、識別用メッセージを表示します
+要件定義書: 06-004-ssd_1306_oled_要件定義書（rev.md
 """
 
 import sys
@@ -10,12 +11,18 @@ from luma.core.interface.serial import i2c
 from luma.oled.device import ssd1306
 from PIL import Image, ImageDraw, ImageFont
 
+# ========================================
+# 設定（コード冒頭の定数で設定）
+# ========================================
+
 # ディスプレイ設定
-WIDTH = 128
-HEIGHT = 64
-I2C_ADDRESS = 0x3C
-FONT_PATH = "../assets/fonts/NotoSansCJKjp-Regular.otf"
-FONT_SIZE = 14
+WIDTH = 128  # 画面幅（ピクセル）
+HEIGHT = 64  # 画面高さ（ピクセル）
+I2C_ADDRESS = 0x3C  # I²Cアドレス（通常 0x3C または 0x3D）
+
+# フォント設定
+FONT_PATH = "../assets/fonts/NotoSansCJKjp-Regular.otf"  # フォントファイルのパス
+FONT_SIZE = 14  # フォントサイズ
 
 def display_test_message(port_number, message):
     """
@@ -26,7 +33,7 @@ def display_test_message(port_number, message):
         message (str): 表示するメッセージ
     """
     try:
-        # I²C初期化
+        # I²Cインターフェースの初期化
         serial = i2c(port=port_number, address=I2C_ADDRESS)
         device = ssd1306(serial, width=WIDTH, height=HEIGHT)
 
@@ -38,16 +45,17 @@ def display_test_message(port_number, message):
             print("   デフォルトフォントを使用します（小さく表示されます）")
             font = ImageFont.load_default()
 
-        # 画像作成
+        # Pillowで描画用の画像を作成
+        # モード"1"は1ビット（白黒）画像
         image = Image.new("1", (WIDTH, HEIGHT))
         draw = ImageDraw.Draw(image)
 
-        # 大きく見やすいテキストを表示
+        # 識別用テキストを表示（ポート番号とI²Cアドレス）
         draw.text((5, 5), message, font=font, fill=255)
         draw.text((5, 25), f"Port: {port_number}", font=font, fill=255)
         draw.text((5, 45), f"0x{I2C_ADDRESS:02X}", font=font, fill=255)
 
-        # 表示
+        # OLEDに表示
         device.display(image)
         print(f"✅ I2C-{port_number} (0x{I2C_ADDRESS:02X}) に表示しました")
         print(f"   メッセージ: {message}")
@@ -55,11 +63,15 @@ def display_test_message(port_number, message):
         return True
 
     except Exception as e:
-        print(f"❌ I2C-{port_number} への表示に失敗: {e}")
+        print(f"[識別テスト]エラー: I2C-{port_number} への表示に失敗")
+        print(f"詳細: {e}")
         return False
 
 
 def main():
+    """
+    メイン関数：I²Cポート1の OLEDに識別メッセージを表示
+    """
     print("=" * 60)
     print("OLED 識別テスト")
     print("=" * 60)
