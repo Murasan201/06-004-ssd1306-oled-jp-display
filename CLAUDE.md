@@ -97,17 +97,31 @@
 repo-root/
 ├─ src/
 │  ├─ simple_oled.py      # 固定表示サンプル
-│  └─ scroll_oled.py      # スクロール表示サンプル
+│  ├─ scroll_oled.py      # スクロール表示サンプル
+│  └─ scroll_oled_full.py # スクロール表示サンプル（動作確認済み・編集禁止）
 ├─ assets/
 │  └─ fonts/              # 日本語フォント + ライセンス文書
 │     └─ [NotoSansCJKjp-Regular.otf など]
 ├─ docs/
+│  ├─ scroll_oled_spec.md # scroll_oled.py 機能仕様書
 │  └─ TROUBLESHOOTING.md  # トラブルシューティング集
 ├─ COMMENT_STYLE_GUIDE.md
 ├─ CLAUDE.md              # 本ファイル
 ├─ LICENSE
 └─ README.md
 ```
+
+---
+
+## 編集禁止ファイル
+
+以下のファイルは**動作確認済みでfix（確定）**しているため、**編集禁止**です。
+
+| ファイル | 説明 |
+|---------|------|
+| `src/scroll_oled_full.py` | スクロール表示サンプル（動作確認済み） |
+
+**注意**: これらのファイルは参照のみ可能です。変更が必要な場合は、コピーを作成して別ファイルで作業してください。
 
 ---
 
@@ -134,21 +148,37 @@ repo-root/
 **制約**:
 - テキストが収まらない場合は**フォントサイズを手動で調整**（自動縮小は実装しない）
 
-### scroll_oled.py（横スクロール）
+### scroll_oled.py（横スクロール・ライブラリ）
+
+**位置づけ**:
+- 他のプロジェクトでライブラリとして流用可能な設計
+- `OLEDScroller` クラスでスクロール機能を提供
+- `main()` 関数は動作テスト用
+- 初心者向け書籍掲載用にMVP化（最小構成・スリム化）
+- 機能仕様書: `docs/scroll_oled_spec.md`
+
+**クラス構成**:
+```python
+class OLEDScroller:
+    __init__()  # デバイス・フォント初期化
+    scroll()    # テキストスクロール表示
+    clear()     # 画面クリア
+```
+
+**他プロジェクトからの使用例**:
+```python
+from scroll_oled import OLEDScroller
+
+scroller = OLEDScroller()
+scroller.scroll("表示テキスト", loops=3)
+scroller.clear()
+```
 
 **定数設定項目**:
-- `SCROLL_TEXT`: スクロールする1行テキスト
-- `SCROLL_SPEED_PX`: スクロール速度（ピクセル/フレーム）
-- `FRAME_DELAY_SEC`: フレーム間隔（秒）
-- `LOOP_COUNT`: ループ回数（None で無限ループ）
-- フォント、解像度、I²Cアドレス（simple_oled.py と同様）
-
-**処理フロー**:
-1. デバイス初期化
-2. 無限ループ（または指定回数）:
-   - テキストを右→左にシフト
-   - 画像を再描画
-   - `time.sleep(FRAME_DELAY_SEC)` で待機
+- `FONT_PATH`: フォントファイルパス
+- `FONT_SIZE`: フォントサイズ（デフォルト: 16）
+- `WIDTH`, `HEIGHT`: 画面解像度（128×64 または 128×32）
+- `I2C_ADDRESS`: I²Cアドレス（デフォルト: 0x3C）
 
 ---
 
