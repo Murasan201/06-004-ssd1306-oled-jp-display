@@ -33,6 +33,7 @@ Raspberry Pi 5 と SSD1306 OLED（I²C）を使用した**日本語表示の入�
 - ✅ 充実したエラーメッセージとトラブルシューティング
 
 **参照ドキュメント**:
+- [セットアップガイド](docs/SETUP_GUIDE.md) - 環境構築の詳細手順
 - [要件定義書](06-004-ssd_1306_oled_要件定義書（rev.md)
 - [コメントスタイルガイド](COMMENT_STYLE_GUIDE.md)
 - [作業ルール](CLAUDE.md)
@@ -93,20 +94,39 @@ Pin 6  (GND)   ------> GND
 
 ## セットアップ
 
-### 1. I²C の有効化
+以下の手順をすべて完了してから、サンプルを実行してください。
+
+### ステップ 1: I²C の有効化
+
+I²C インターフェースを有効にします。
 
 ```bash
 sudo raspi-config
 ```
 
-- `3 Interface Options` → `I5 I2C` → `Yes`
-- 再起動
+メニューで以下を選択:
+1. `3 Interface Options` を選択
+2. `I5 I2C` を選択
+3. `Yes` を選択して有効化
+4. `Finish` で終了
 
+**再起動が必要です**:
 ```bash
 sudo reboot
 ```
 
-### 2. I²C デバイスの確認
+**確認方法**:
+```bash
+ls /dev/i2c*
+```
+
+`/dev/i2c-1` が表示されれば有効化されています。
+
+---
+
+### ステップ 2: I²C デバイスの確認
+
+OLED が正しく接続されているか確認します。
 
 ```bash
 i2cdetect -y 1
@@ -119,33 +139,123 @@ i2cdetect -y 1
 10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 30: -- -- -- -- -- -- -- -- -- -- -- -- 3c -- -- --
-...
+40: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+50: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+60: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+70: -- -- -- -- -- -- -- --
 ```
 
-`3c`（0x3C）または `3d`（0x3D）が表示されればOKです。
+- `3c`（0x3C）または `3d`（0x3D）が表示されれば OK
+- 何も表示されない場合: [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) を参照
 
-### 3. リポジトリのクローン
+---
 
-```bash
-cd ~/work/project
-git clone <リポジトリURL>
-cd 06-004-ssd1306-oled-jp-display
-```
+### ステップ 3: Python ライブラリのインストール
 
-### 4. Python ライブラリのインストール
+必要なライブラリをインストールします。
 
 ```bash
 pip install luma.oled pillow
 ```
 
-### 5. 日本語フォントの配置
+**確認方法**:
+```bash
+pip list | grep -E "luma|Pillow"
+```
+
+**期待される出力例**:
+```
+luma.core        2.4.2
+luma.oled        3.13.0
+Pillow           10.2.0
+```
+
+バージョン番号は異なる場合があります。両方のパッケージが表示されれば OK です。
+
+**エラーが出た場合**:
+```bash
+# pip3 を使う場合
+pip3 install luma.oled pillow
+
+# 権限エラーの場合
+pip install --user luma.oled pillow
+```
+
+---
+
+### ステップ 4: 日本語フォントの配置
+
+日本語表示に必要なフォントをダウンロードします。
 
 ```bash
+# プロジェクトルートに移動
+cd /home/pi/work/project/kodansya/06-004-ssd1306-oled-jp-display
+
+# フォントディレクトリに移動
 cd assets/fonts/
+
+# フォントファイルをダウンロード
 wget https://github.com/googlefonts/noto-cjk/raw/main/Sans/OTF/Japanese/NotoSansCJKjp-Regular.otf
+
+# ライセンスファイルをダウンロード
 wget https://raw.githubusercontent.com/googlefonts/noto-cjk/main/LICENSE
+
+# プロジェクトルートに戻る
 cd ../..
 ```
+
+**確認方法**:
+```bash
+ls -lh assets/fonts/
+```
+
+**期待される出力例**:
+```
+-rw-r--r-- 1 pi pi 4.4K Dec 30 12:00 LICENSE
+-rw-r--r-- 1 pi pi  16M Dec 30 12:00 NotoSansCJKjp-Regular.otf
+-rw-r--r-- 1 pi pi 2.4K Dec 30 12:00 README.md
+```
+
+フォントファイル（約16MB）が存在すれば OK です。
+
+---
+
+### ステップ 5: セットアップ完了の確認
+
+すべてのセットアップが完了したか確認します。
+
+```bash
+# プロジェクトルートで実行
+cd /home/pi/work/project/kodansya/06-004-ssd1306-oled-jp-display
+
+# 1. I²C デバイスの確認
+echo "=== I²C デバイス ==="
+i2cdetect -y 1 | grep -E "3c|3d" && echo "✓ OLED 検出済み" || echo "✗ OLED 未検出"
+
+# 2. Python ライブラリの確認
+echo ""
+echo "=== Python ライブラリ ==="
+python3 -c "import luma.oled; print('✓ luma.oled インストール済み')" 2>/dev/null || echo "✗ luma.oled 未インストール"
+python3 -c "from PIL import Image; print('✓ Pillow インストール済み')" 2>/dev/null || echo "✗ Pillow 未インストール"
+
+# 3. フォントファイルの確認
+echo ""
+echo "=== フォントファイル ==="
+[ -f "assets/fonts/NotoSansCJKjp-Regular.otf" ] && echo "✓ フォント配置済み" || echo "✗ フォント未配置"
+```
+
+すべて ✓ が表示されれば、セットアップ完了です。
+
+---
+
+### セットアップのまとめ
+
+| ステップ | 内容 | 確認コマンド |
+|---------|------|-------------|
+| 1 | I²C 有効化 | `ls /dev/i2c*` |
+| 2 | OLED 接続確認 | `i2cdetect -y 1` |
+| 3 | ライブラリインストール | `pip list \| grep luma` |
+| 4 | フォント配置 | `ls assets/fonts/*.otf` |
 
 ---
 
