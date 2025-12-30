@@ -53,7 +53,7 @@ scroll(text, speed, delay, loops, y_pos)
 |------|-----|-----------|------|
 | text | str | （必須） | 表示するテキスト |
 | speed | int | 2 | スクロール速度（px/フレーム） |
-| delay | float | 0.05 | フレーム間隔（秒） |
+| delay | float | 0.1 | フレーム間隔（秒）※I²C通信安定化のため |
 | loops | int | None | ループ回数（Noneで無限） |
 | y_pos | int | 24 | テキストのY座標 |
 
@@ -154,3 +154,4 @@ scroller.scroll("センサー値: 25.5℃", loops=1)
 ## 更新履歴
 
 - 2025-12-29: ライブラリ化・MVP化
+- 2025-12-30: delay デフォルト値を 0.05 → 0.1 に変更（I²C通信安定化）
