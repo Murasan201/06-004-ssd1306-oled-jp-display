@@ -1,146 +1,49 @@
-# SSD1306 OLED 日本語表示サンプル セットアップガイド
+# セットアップガイド
 
-本書は、Raspberry Pi 5 と SSD1306 OLED を使用した日本語表示サンプルの実行環境を構築するための手順書です。
-
----
-
-## 目次
-
-1. [前提条件](#1-前提条件)
-2. [ハードウェアの準備](#2-ハードウェアの準備)
-3. [I²C の有効化](#3-i2c-の有効化)
-4. [I²C デバイスの確認](#4-i2c-デバイスの確認)
-5. [Python ライブラリのインストール](#5-python-ライブラリのインストール)
-6. [日本語フォントの配置](#6-日本語フォントの配置)
-7. [セットアップ完了の確認](#7-セットアップ完了の確認)
-8. [動作確認](#8-動作確認)
-9. [トラブルシューティング](#9-トラブルシューティング)
+このドキュメントでは、SSD1306 OLED 日本語表示サンプルの環境構築手順を説明します。
 
 ---
 
-## 1. 前提条件
+## 前提条件
 
-### 必要な機器
-
-| 機器 | 説明 |
-|------|------|
-| Raspberry Pi 5 | Raspberry Pi OS（Bookworm 以降）インストール済み |
-| SSD1306 OLED モジュール | I²C 接続、128×64 または 128×32 |
-| I²C レベル変換モジュール | BSS138 方式など（5V OLED 使用時は必須） |
-| ジャンパーワイヤー | オス-メス、オス-オスなど |
-| ブレッドボード | 推奨 |
-
-### ソフトウェア要件
-
-| 項目 | バージョン |
-|------|-----------|
-| Python | 3.11 以降推奨 |
-| OS | Raspberry Pi OS Bookworm 以降 |
-| pip | 最新版推奨 |
+- **Raspberry Pi 5**（Raspberry Pi OS Bookworm 以降）
+- **インターネット接続**（ライブラリ・フォントのダウンロードに必要）
+- **SSD1306 OLED モジュール**（I²C接続）とレベル変換モジュールが配線済み
 
 ---
 
-## 2. ハードウェアの準備
+## 1. I²C の有効化
 
-### 重要な注意事項
+Raspberry Pi で I²C 通信を使用するには、設定を有効にする必要があります。
 
-**5V OLED を Raspberry Pi に直結しないでください**
-
-- Raspberry Pi の GPIO は **3.3V** です
-- 5V OLED と直結すると、通信できないだけでなく **GPIO を破損する可能性** があります
-- **必ずレベル変換モジュール（BSS138方式）を使用** してください
-- 3.3V 動作の OLED モジュールの使用を推奨します
-
-### 配線図
-
-#### レベル変換使用時（5V OLED の場合）
-
-```
-[Raspberry Pi 5]         [レベル変換]          [5V OLED]
-Pin 1  (3.3V)  --------> LV
-Pin 3  (GPIO2/SDA) ----> LV-SDA  ----> HV-SDA  ----> SDA
-Pin 5  (GPIO3/SCL) ----> LV-SCL  ----> HV-SCL  ----> SCL
-Pin 6  (GND)   --------> GND     <---- GND     <---- GND
-                         HV      <---- VCC (5V)
-```
-
-#### 3.3V OLED の場合（レベル変換不要）
-
-```
-[Raspberry Pi 5]         [3.3V OLED]
-Pin 1  (3.3V)  --------> VCC
-Pin 3  (GPIO2/SDA) ----> SDA
-Pin 5  (GPIO3/SCL) ----> SCL
-Pin 6  (GND)   --------> GND
-```
-
-### GPIO ピン配置参考
-
-| Pin番号 | 機能 | 用途 |
-|--------|------|------|
-| 1 | 3.3V | 電源（3.3V OLED）またはレベル変換 LV |
-| 3 | GPIO2 | SDA（I²C データ） |
-| 5 | GPIO3 | SCL（I²C クロック） |
-| 6 | GND | グランド（共通） |
-
----
-
-## 3. I²C の有効化
-
-### 手順
-
-1. ターミナルを開き、以下のコマンドを実行:
+### 1.1 設定画面を開く
 
 ```bash
 sudo raspi-config
 ```
 
-2. メニューで以下を選択:
-   - `3 Interface Options` を選択
-   - `I5 I2C` を選択
-   - `Yes` を選択して有効化
-   - `Finish` で終了
+### 1.2 I²C を有効化
 
-3. 再起動:
+1. `3 Interface Options` を選択
+2. `I5 I2C` を選択
+3. `Yes` を選択して有効化
+4. `Finish` で終了
+
+### 1.3 再起動
 
 ```bash
 sudo reboot
 ```
 
-### 確認方法
+### 1.4 I²C デバイスの確認
 
-再起動後、以下のコマンドで I²C が有効化されているか確認:
-
-```bash
-ls /dev/i2c*
-```
-
-**期待される出力**:
-```
-/dev/i2c-1
-```
-
-`/dev/i2c-1` が表示されれば、I²C は有効化されています。
-
-**表示されない場合**:
-- `raspi-config` で I²C を再度有効化してください
-- `/boot/firmware/config.txt` に `dtparam=i2c_arm=on` が記載されているか確認してください
-
----
-
-## 4. I²C デバイスの確認
-
-OLED が正しく接続されているか確認します。
-
-### 手順
-
-以下のコマンドを実行:
+再起動後、OLED が認識されているか確認します。
 
 ```bash
 i2cdetect -y 1
 ```
 
-### 期待される出力
+**期待される出力例**:
 
 ```
      0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
@@ -154,301 +57,294 @@ i2cdetect -y 1
 70: -- -- -- -- -- -- -- --
 ```
 
-- `3c`（0x3C）が表示されれば OLED は正しく検出されています
-- `3d`（0x3D）が表示される OLED モジュールもあります
+`3c`（アドレス 0x3C）が表示されれば OK です。
+`3d`（アドレス 0x3D）の場合もあります。
 
-### デバイスが表示されない場合
-
-以下を確認してください:
-
-1. **配線の確認**
-   - SDA: GPIO2（Pin 3）に接続
-   - SCL: GPIO3（Pin 5）に接続
-   - GND: GND（Pin 6）に接続
-   - VCC: 電源に接続
-
-2. **レベル変換の確認**（5V OLED の場合）
-   - LV 側: Raspberry Pi の 3.3V と GPIO
-   - HV 側: OLED の電源電圧と SDA/SCL
-
-3. **電源の確認**
-   - OLED に電源が供給されているか確認
-
-詳細は [TROUBLESHOOTING.md](TROUBLESHOOTING.md) を参照してください。
+**表示されない場合**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) の「1. `i2cdetect` でデバイスが見つからない」を参照してください。
 
 ---
 
-## 5. Python ライブラリのインストール
+## 2. プロジェクトの取得
 
-### 必要なライブラリ
-
-| ライブラリ | 用途 |
-|-----------|------|
-| luma.oled | SSD1306 OLED 制御 |
-| Pillow | 画像・テキスト描画 |
-
-### インストールコマンド
+### 2.1 作業ディレクトリへ移動
 
 ```bash
-pip install luma.oled pillow
+cd ~/work/project
 ```
 
-### 確認方法
+### 2.2 リポジトリのクローン（初回のみ）
 
 ```bash
-pip list | grep -E "luma|Pillow"
+git clone <リポジトリURL>
+cd 06-004-ssd1306-oled-jp-display
 ```
 
-**期待される出力**:
-```
-luma.core        2.4.2
-luma.oled        3.13.0
-Pillow           10.2.0
-```
-
-バージョン番号は異なる場合があります。`luma.core`、`luma.oled`、`Pillow` の3つが表示されれば OK です。
-
-### エラーが出た場合
-
-#### pip3 を使う場合
+既にクローン済みの場合:
 
 ```bash
-pip3 install luma.oled pillow
+cd 06-004-ssd1306-oled-jp-display
 ```
 
-#### 権限エラーの場合
+---
 
-```bash
-pip install --user luma.oled pillow
-```
+## 3. Python 仮想環境の作成
 
-#### 仮想環境を使用する場合
+Python の仮想環境を使用することで、システムの Python 環境を汚さずにライブラリを管理できます。
+
+### 3.1 仮想環境の作成
+
+プロジェクトのルートディレクトリで以下を実行します。
 
 ```bash
 python3 -m venv venv
+```
+
+**コマンドの意味**:
+- `python3 -m venv`: Python の仮想環境モジュールを実行
+- `venv`: 作成する仮想環境のディレクトリ名
+
+実行後、`venv` という名前のディレクトリが作成されます。
+
+### 3.2 仮想環境の有効化
+
+```bash
 source venv/bin/activate
-pip install luma.oled pillow
+```
+
+**成功すると**: プロンプトの先頭に `(venv)` が表示されます。
+
+```
+(venv) pi@raspberrypi:~/work/project/06-004-ssd1306-oled-jp-display $
+```
+
+この `(venv)` が表示されている間は、仮想環境内で作業していることを意味します。
+
+### 3.3 pip のアップグレード（推奨）
+
+pip（Python のパッケージ管理ツール）を最新版にアップグレードします。
+
+```bash
+pip install --upgrade pip
 ```
 
 ---
 
-## 6. 日本語フォントの配置
+## 4. ライブラリのインストール
 
-日本語表示に必要なフォントをダウンロードして配置します。
+仮想環境が有効化された状態（プロンプトに `(venv)` が表示されている状態）で、必要なライブラリをインストールします。
 
-### 使用フォント
+### 4.1 luma.oled のインストール
 
-| フォント | ライセンス | 備考 |
-|---------|-----------|------|
-| Noto Sans CJK JP | SIL Open Font License (OFL-1.1) | 商用利用可、推奨 |
-
-### 手順
-
-1. プロジェクトルートに移動:
+SSD1306 OLED を制御するためのライブラリです。
 
 ```bash
-cd /home/pi/work/project/kodansya/06-004-ssd1306-oled-jp-display
+pip install luma.oled
 ```
 
-2. フォントディレクトリに移動:
+**インストール内容**:
+- `luma.oled`: OLED ディスプレイ制御
+- `luma.core`: luma シリーズの共通ライブラリ（自動でインストールされます）
+
+### 4.2 Pillow のインストール
+
+画像処理と日本語フォント描画に使用するライブラリです。
+
+```bash
+pip install pillow
+```
+
+**補足**: Pillow は luma.oled の依存ライブラリとして既にインストールされている場合がありますが、明示的にインストールしておくと確実です。
+
+### 4.3 インストール確認
+
+インストールされたライブラリを確認します。
+
+```bash
+pip list
+```
+
+以下のライブラリが一覧に表示されれば OK です:
+
+| ライブラリ | 用途 |
+|------------|------|
+| `luma-oled` | SSD1306 OLED の制御 |
+| `Pillow` | 画像処理・日本語フォント描画 |
+
+---
+
+## 5. 日本語フォントのダウンロード
+
+日本語を OLED に表示するには、日本語対応フォントが必要です。
+
+### 5.1 フォントディレクトリへ移動
 
 ```bash
 cd assets/fonts/
 ```
 
-3. フォントファイルをダウンロード:
+### 5.2 フォントファイルのダウンロード
+
+**Noto Sans CJK JP**（Google 提供の日本語フォント）をダウンロードします。
 
 ```bash
-wget https://github.com/googlefonts/noto-cjk/raw/main/Sans/OTF/Japanese/NotoSansCJKjp-Regular.otf
+wget https://github.com/notofonts/noto-cjk/raw/main/Sans/OTF/Japanese/NotoSansCJKjp-Regular.otf
 ```
 
-4. ライセンスファイルをダウンロード:
+**補足**:
+- ファイルサイズは約 16MB です
+- ダウンロードに数分かかる場合があります
+
+### 5.3 ライセンスファイルのダウンロード
+
+フォントのライセンス文書（OFL: SIL Open Font License）も必ずダウンロードしてください。
 
 ```bash
-wget https://raw.githubusercontent.com/googlefonts/noto-cjk/main/LICENSE
+wget https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/LICENSE
 ```
 
-5. プロジェクトルートに戻る:
+### 5.4 ダウンロード確認
+
+```bash
+ls -lh
+```
+
+**期待される出力**:
+
+```
+-rw-r--r-- 1 pi pi 4.4K Jan  1 12:00 LICENSE
+-rw-r--r-- 1 pi pi  16M Jan  1 12:00 NotoSansCJKjp-Regular.otf
+-rw-r--r-- 1 pi pi 2.8K Jan  1 12:00 README.md
+```
+
+### 5.5 プロジェクトルートへ戻る
 
 ```bash
 cd ../..
 ```
 
-### 確認方法
+---
+
+## 6. 動作確認
+
+### 6.1 仮想環境の有効化を確認
+
+プロンプトに `(venv)` が表示されていることを確認してください。
+表示されていない場合は、再度有効化します。
 
 ```bash
-ls -lh assets/fonts/
+source venv/bin/activate
+```
+
+### 6.2 固定表示サンプルの実行
+
+```bash
+cd src/
+python simple_oled.py
 ```
 
 **期待される出力**:
+
 ```
--rw-r--r-- 1 pi pi 4.4K Dec 30 12:00 LICENSE
--rw-r--r-- 1 pi pi  16M Dec 30 12:00 NotoSansCJKjp-Regular.otf
--rw-r--r-- 1 pi pi 2.4K Dec 30 12:00 README.md
+I²C初期化完了: アドレス 0x3C, ポート 1
+OLED初期化完了: 128×64
+コントラスト設定: 255 (最大)
+フォント読み込み完了: ../assets/fonts/NotoSansCJKjp-Regular.otf, サイズ 18
+表示完了
+表示テキスト: 2行
+
+表示を保持しています...
+終了する場合は Ctrl+C を押してください
 ```
 
-`NotoSansCJKjp-Regular.otf`（約16MB）が存在すれば OK です。
+OLED に「こんにちは」「Raspberry Pi 5」と表示されれば成功です。
 
-### 注意事項
+**停止方法**: `Ctrl + C`
 
-- フォントファイルは約 16MB と大きいですが、日本語の全文字をカバーするために必要です
-- ライセンスファイル（LICENSE）は必ず同梱してください
-
----
-
-## 7. セットアップ完了の確認
-
-すべてのセットアップが完了したか、一括で確認します。
-
-### 確認スクリプト
-
-プロジェクトルートで以下のコマンドを実行:
+### 6.3 スクロール表示サンプルの実行
 
 ```bash
-cd /home/pi/work/project/kodansya/06-004-ssd1306-oled-jp-display
-
-echo "=========================================="
-echo "セットアップ確認"
-echo "=========================================="
-
-# 1. I²C デバイスの確認
-echo ""
-echo "[1] I²C デバイス"
-if i2cdetect -y 1 2>/dev/null | grep -qE "3c|3d"; then
-    echo "    ✓ OLED 検出済み"
-    i2cdetect -y 1 | grep -E "3c|3d"
-else
-    echo "    ✗ OLED 未検出"
-fi
-
-# 2. Python ライブラリの確認
-echo ""
-echo "[2] Python ライブラリ"
-if python3 -c "import luma.oled" 2>/dev/null; then
-    echo "    ✓ luma.oled インストール済み"
-else
-    echo "    ✗ luma.oled 未インストール"
-fi
-
-if python3 -c "from PIL import Image" 2>/dev/null; then
-    echo "    ✓ Pillow インストール済み"
-else
-    echo "    ✗ Pillow 未インストール"
-fi
-
-# 3. フォントファイルの確認
-echo ""
-echo "[3] フォントファイル"
-if [ -f "assets/fonts/NotoSansCJKjp-Regular.otf" ]; then
-    echo "    ✓ フォント配置済み"
-    ls -lh assets/fonts/NotoSansCJKjp-Regular.otf | awk '{print "      サイズ: " $5}'
-else
-    echo "    ✗ フォント未配置"
-fi
-
-echo ""
-echo "=========================================="
+python scroll_oled.py
 ```
 
-### 期待される出力
+**期待される出力**:
 
 ```
-==========================================
-セットアップ確認
-==========================================
-
-[1] I²C デバイス
-    ✓ OLED 検出済み
-30: -- -- -- -- -- -- -- -- -- -- -- -- 3c -- -- --
-
-[2] Python ライブラリ
-    ✓ luma.oled インストール済み
-    ✓ Pillow インストール済み
-
-[3] フォントファイル
-    ✓ フォント配置済み
-      サイズ: 16M
-
-==========================================
+I²C初期化完了: アドレス 0x3C, ポート 1
+OLED初期化完了: 128×64
+コントラスト設定: 255 (最大)
+フォント読み込み完了: ../assets/fonts/NotoSansCJKjp-Regular.otf, サイズ 16
+スクロール開始: テキスト幅 850px
+スクロール速度: 2px/フレーム, 間隔: 0.05秒
+ループ回数: 3回
 ```
 
-すべて ✓ が表示されれば、セットアップ完了です。
+日本語テキストが右から左へスクロール表示されれば成功です。
 
 ---
 
-## 8. 動作確認
+## 7. 仮想環境の運用
 
-### サンプル1: スクロール表示（scroll_oled.py）
+### 7.1 仮想環境の有効化（毎回必要）
+
+新しいターミナルを開くたびに、仮想環境を有効化する必要があります。
 
 ```bash
-cd /home/pi/work/project/kodansya/06-004-ssd1306-oled-jp-display/src
-python3 scroll_oled.py
+cd ~/work/project/06-004-ssd1306-oled-jp-display
+source venv/bin/activate
 ```
 
-**期待される動作**:
-- OLED に「こんにちは Raspberry Pi！」が右から左へスクロール表示される
-- 3回ループ後に自動終了
-- コンソールに「スクロールテスト開始（3回ループ）」「テスト完了」と表示される
+有効化されると、プロンプトに `(venv)` が表示されます。
 
-### サンプル2: 固定表示（simple_oled.py）
+### 7.2 仮想環境の終了
+
+作業が終わったら、仮想環境を終了できます。
 
 ```bash
-cd /home/pi/work/project/kodansya/06-004-ssd1306-oled-jp-display/src
-python3 simple_oled.py
+deactivate
 ```
 
-**期待される動作**:
-- OLED に複数行の日本語テキストが固定表示される
-
-### 停止方法
-
-スクロール表示中に停止したい場合:
-```
-Ctrl + C
-```
+プロンプトから `(venv)` が消えます。
 
 ---
 
-## 9. トラブルシューティング
+## セットアップ完了チェックリスト
 
-### よくあるエラーと対処法
-
-| エラー | 原因 | 対処法 |
-|--------|------|--------|
-| `ModuleNotFoundError: No module named 'luma'` | ライブラリ未インストール | `pip install luma.oled pillow` |
-| `i2cdetect` でデバイス未検出 | 配線誤り、I²C 未有効化 | 配線確認、`raspi-config` で I²C 有効化 |
-| `[Errno 121] Remote I/O error` | I²C 通信失敗 | 配線・レベル変換確認 |
-| `cannot open resource` | フォント未配置 | フォントをダウンロード |
-| 日本語が「□」になる | フォントパス誤り | `FONT_PATH` を確認 |
-| `Permission denied: '/dev/i2c-1'` | i2c グループ未所属 | `sudo usermod -aG i2c $USER` |
-
-### 詳細なトラブルシューティング
-
-[TROUBLESHOOTING.md](TROUBLESHOOTING.md) を参照してください。
+- [ ] I²C が有効化されている
+- [ ] `i2cdetect -y 1` で OLED が認識される（0x3C または 0x3D）
+- [ ] 仮想環境 `venv/` が作成されている
+- [ ] 仮想環境を有効化できる（`source venv/bin/activate`）
+- [ ] `luma-oled` がインストールされている
+- [ ] `Pillow` がインストールされている
+- [ ] `assets/fonts/NotoSansCJKjp-Regular.otf` が配置されている
+- [ ] `assets/fonts/LICENSE` が配置されている
+- [ ] `simple_oled.py` で日本語が正しく表示される
+- [ ] `scroll_oled.py` でスクロール表示が動作する
 
 ---
 
-## セットアップ手順まとめ
+## トラブルシューティング
 
-| ステップ | 内容 | 確認コマンド |
-|---------|------|-------------|
-| 1 | ハードウェア接続 | 目視確認 |
-| 2 | I²C 有効化 | `ls /dev/i2c*` |
-| 3 | OLED 接続確認 | `i2cdetect -y 1` |
-| 4 | ライブラリインストール | `pip list \| grep luma` |
-| 5 | フォント配置 | `ls assets/fonts/*.otf` |
-| 6 | 動作確認 | `python3 src/scroll_oled.py` |
+問題が発生した場合は、以下を参照してください。
 
----
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**: よくあるエラーと対処方法
 
-## 参考資料
+### よくあるエラー
 
-- [luma.oled ドキュメント](https://luma-oled.readthedocs.io/)
-- [Pillow ドキュメント](https://pillow.readthedocs.io/)
-- [Noto Fonts](https://fonts.google.com/noto)
-- [Raspberry Pi I²C 設定](https://www.raspberrypi.com/documentation/computers/configuration.html)
+| エラー | 原因 | 対処 |
+|--------|------|------|
+| `ModuleNotFoundError: No module named 'luma'` | 仮想環境が有効でない、またはライブラリ未インストール | `source venv/bin/activate` を実行後、`pip install luma.oled` |
+| `[Errno 121] Remote I/O error` | I²C 通信エラー | 配線とレベル変換モジュールを確認 |
+| `cannot open resource` | フォントファイルが見つからない | フォントのダウンロードとパスを確認 |
 
 ---
 
-**作成日**: 2025-12-30
-**対象**: 初心者向け Raspberry Pi + OLED 日本語表示教材
+## 参考情報
+
+- **要件定義書**: [06-004-ssd_1306_oled_要件定義書（rev.md](../06-004-ssd_1306_oled_要件定義書（rev.md)
+- **README**: [../README.md](../README.md)
+- **luma.oled ドキュメント**: https://luma-oled.readthedocs.io/
+- **Pillow ドキュメント**: https://pillow.readthedocs.io/
+
+---
+
+**作成日**: 2025-01-04
